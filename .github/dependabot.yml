@@ -1,0 +1,7 @@
+# The only dependencies are the actions the workflow uses.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

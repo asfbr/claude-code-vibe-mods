@@ -1,0 +1,65 @@
+{
+  "name": "breathe",
+  "version": "0.3.0",
+  "description": "A short breathing exercise beside the chat: /breathe, on a schedule, or when your prompts run hot.",
+  "author": { "name": "Andre Fontoura" },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "where": {
+      "type": "string",
+      "title": "Where it opens",
+      "description": "pane: beside the chat, at once. window: a small Edge window on top of everything, bottom-right (Windows). A pane that cannot be placed (a narrow terminal, a scheduled break) opens the window instead.",
+      "default": "pane",
+      "options": ["pane", "window"]
+    },
+    "anger": {
+      "type": "string",
+      "title": "When your prompts run hot",
+      "description": "open: the window opens by itself (it never takes the keyboard). hint: a status-line hint to run /breathe. off: never.",
+      "default": "open",
+      "options": ["open", "hint", "off"]
+    },
+    "cooldown": {
+      "type": "string",
+      "title": "Hot-prompt cooldown",
+      "description": "At most one hot-prompt window or hint in this long, across sessions.",
+      "default": "1 h",
+      "options": ["30 min", "1 h", "2 h"]
+    },
+    "schedule": {
+      "type": "string",
+      "title": "Scheduled break",
+      "description": "Open the window this often while Claude Code is open.",
+      "default": "off",
+      "options": ["off", "30 min", "1 h", "90 min", "2 h"]
+    },
+    "pattern": {
+      "type": "string",
+      "title": "Breathing pattern",
+      "description": "4-6: in 4 s, out 6 s. box: in, hold, out, hold, 4 s each. 4-7-8: in 4, hold 7, out 8.",
+      "default": "4-6",
+      "options": ["4-6", "box", "4-7-8"]
+    },
+    "length": {
+      "type": "string",
+      "title": "Length",
+      "description": "How long the window breathes before it closes itself.",
+      "default": "30 s",
+      "options": ["15 s", "30 s", "1 min", "2 min"]
+    },
+    "sound": {
+      "type": "boolean",
+      "title": "Sound",
+      "description": "A low drone that swells with each breath. Off: silent.",
+      "default": true
+    },
+    "volume": {
+      "type": "string",
+      "title": "Volume",
+      "description": "How loud the drone plays.",
+      "default": "35%",
+      "options": ["100%", "70%", "50%", "35%", "20%", "10%"]
+    }
+  }
+}

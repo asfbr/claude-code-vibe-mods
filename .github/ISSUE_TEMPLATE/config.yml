@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/asfbr/claude-code-vibe-mods/security/advisories/new
+    about: Privately. Please don't open a public issue for it.
