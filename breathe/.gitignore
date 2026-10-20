@@ -1,0 +1,5 @@
+# Laid by Claude Code at every load
+.claude-plugin/types/
+tsconfig.json
+# Your own insult list (README § Hot prompts), never committed
+insults.local.txt

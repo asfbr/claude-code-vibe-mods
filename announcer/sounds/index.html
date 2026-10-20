@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Announcer sounds</title>
+<style>
+:root { --bg: #fafaf9; --fg: #1c1917; --muted: #78716c; --line: #e7e5e4; --accent: #2563eb; --dim: #d6d3d1;
+  --ide: #4782c8; --permission: #5769f7; --claude: #d77757; --merged: #8700ff; --success: #2c7a39; --error: #ab2b3f; --warning: #966c1e; --inactive: #666; }
+@media (prefers-color-scheme: dark) { :root { --bg: #1c1917; --fg: #f5f5f4; --muted: #a8a29e; --line: #292524; --accent: #60a5fa; --dim: #44403c;
+  --permission: #b1b9f9; --merged: #af87ff; --success: #4eba65; --error: #ff6b80; --warning: #ffc107; --inactive: #999; } }
+body { background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, sans-serif; margin: 0; padding: 24px 16px 72px; }
+.cue, .band { font-family: ui-monospace, Consolas, monospace; white-space: nowrap; }
+.cue i, .band i { display: inline-block; width: 1.3ch; text-align: center; font-style: normal; } /* fallback glyphs keep five even cells */
+.band { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px; background: var(--bg); border-top: 1px solid var(--line); }
+.band .idle { color: var(--dim); } .band .prompt { color: var(--muted); display: block; margin-top: 2px; }
+h1 { font-size: 18px; margin: 0 0 4px; } p { color: var(--muted); margin: 0 0 16px; max-width: 70ch; }
+table { border-collapse: collapse; width: 100%; } th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+thead th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+tbody th { font-family: ui-monospace, monospace; font-weight: 600; white-space: nowrap; } .when { color: var(--muted); max-width: 32ch; }
+.clip { display: flex; gap: 8px; align-items: flex-start; } .clip + .clip { margin-top: 6px; }
+.clip small { display: block; color: var(--muted); } .clip a { color: var(--muted); font-size: 12px; }
+button { flex: none; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--accent); cursor: pointer; }
+button:hover { border-color: var(--accent); } button.playing { background: var(--accent); color: var(--bg); }
+button:disabled { color: var(--dim); cursor: not-allowed; } .none { color: var(--dim); }
+@media (max-width: 720px) { .when { display: none; } }
+</style></head><body>
+<h1>Announcer sounds</h1>
+<p>Each action, its cue (from <code>hooks/cues.ts</code>), when it fires, and its clip in each pack. Built by <code>scripts/packs.py</code> from <code>scripts/packs.json</code>.
+A grey button is a clip not built on this machine (the personal pack is gitignored: run the script to fetch it).
+Playing a clip also shows its cue in the band at the bottom, as it shows above the prompt.</p>
+<table><thead><tr><th>Action</th><th>Cue</th><th>When</th><th>Free</th><th>Personal</th></tr></thead><tbody>
+<tr><th>question</th><td class="cue" data-action="question"></td><td class="when">Claude asks you (AskUserQuestion, a plan to approve)</td><td><div class="clip"><button data-src="free/question.wav" aria-label="Play question (free)">▶</button><span>Kenney interface &quot;question&quot; blip<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/interface-sounds">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/question.wav" aria-label="Play question (personal)">▶</button><span>Metal Gear &quot;!&quot; alert <a href="https://www.myinstants.com/media/sounds/3-metal-gear-solid-alert.mp3">source</a></span></div><div class="clip"><button data-src="personal/question-2.wav" aria-label="Play question-2 (personal)">▶</button><span>Zelda Navi &quot;Hey! Listen!&quot; <a href="https://www.myinstants.com/media/sounds/1hey_listen.mp3">source</a></span></div></td></tr>
+<tr><th>permission</th><td class="cue" data-action="permission"></td><td class="when">a permission dialog opens</td><td><div class="clip"><button data-src="free/permission.wav" aria-label="Play permission (free)">▶</button><span>Kenney &quot;Hurry up&quot;<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/voiceover-pack">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/permission.wav" aria-label="Play permission (personal)">▶</button><span>Among Us &quot;emergency meeting&quot; <a href="https://www.myinstants.com/media/sounds/among-us-emergency-meeting-sound.mp3">source</a></span></div></td></tr>
+<tr><th>subagent</th><td class="cue" data-action="subagent"></td><td class="when">Claude spawns a subagent (with the subagents setting on)</td><td><div class="clip"><button data-src="free/subagent.wav" aria-label="Play subagent (free)">▶</button><span>Kenney &quot;Call for backup!&quot;<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/voiceover-pack">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/subagent.wav" aria-label="Play subagent (personal)">▶</button><span>Mario warp pipe <a href="https://www.myinstants.com/media/sounds/mario-pipe.mp3">source</a></span></div></td></tr>
+<tr><th>edit</th><td class="cue" data-action="edit"></td><td class="when">the turn&#x27;s first file edit</td><td><div class="clip"><button data-src="free/edit.wav" aria-label="Play edit (free)">▶</button><span>Kenney interface click<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/interface-sounds">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/edit.wav" aria-label="Play edit (personal)">▶</button><span>Mario coin <a href="https://www.myinstants.com/media/sounds/02-mario-coin.mp3">source</a></span></div></td></tr>
+<tr><th>big-refactor</th><td class="cue" data-action="big-refactor"></td><td class="when">the tenth file edited in one turn</td><td><div class="clip"><button data-src="free/big-refactor.wav" aria-label="Play big-refactor (free)">▶</button><span>Braam<small>&quot;BRAAM-HIT&quot; by vykroft · CC0 · <a href="https://freesound.org/s/431316/">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/big-refactor.wav" aria-label="Play big-refactor (personal)">▶</button><span>Inception BRAAAM <a href="https://www.myinstants.com/media/sounds/deep-inception-boom.mp3">source</a></span></div></td></tr>
+<tr><th>tests-fail</th><td class="cue" data-action="tests-fail"></td><td class="when">a test/build/lint run fails, by its exit code or its summary (once a turn)</td><td><div class="clip"><button data-src="free/tests-fail.wav" aria-label="Play tests-fail (free)">▶</button><span>Sad trombone<small>&quot;wah wah sad trombone&quot; by kirbydx · CC0 · <a href="https://freesound.org/s/175409/">source</a></small></span></div></td><td class="none">the free one plays</td></tr>
+<tr><th>green-after-red</th><td class="cue" data-action="green-after-red"></td><td class="when">a test/build/lint run passes after one failed</td><td><div class="clip"><button data-src="free/green-after-red.wav" aria-label="Play green-after-red (free)">▶</button><span>Kenney &quot;Objective achieved&quot;<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/voiceover-pack">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/green-after-red.wav" aria-label="Play green-after-red (personal)">▶</button><span>Mario 1-up <a href="https://www.myinstants.com/media/sounds/mario-1up.mp3">source</a></span></div></td></tr>
+<tr><th>tool-error</th><td class="cue" data-action="tool-error"></td><td class="when">an edit or an MCP call errors (once a turn)</td><td><div class="clip"><button data-src="free/tool-error.wav" aria-label="Play tool-error (free)">▶</button><span>Kenney interface error<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/interface-sounds">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/tool-error.wav" aria-label="Play tool-error (personal)">▶</button><span>Windows XP critical stop <a href="https://www.myinstants.com/media/sounds/microsoft-windows-xp-critical-stop.mp3">source</a></span></div></td></tr>
+<tr><th>commit</th><td class="cue" data-action="commit"></td><td class="when">git commit succeeds (git prints the new commit)</td><td><div class="clip"><button data-src="free/commit.wav" aria-label="Play commit (free)">▶</button><span>Kenney &quot;New highscore&quot;<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/voiceover-pack">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/commit.wav" aria-label="Play commit (personal)">▶</button><span>Zelda Ocarina of Time &quot;item get&quot; <a href="https://www.myinstants.com/media/sounds/zelda-oot-item-get.mp3">source</a></span></div></td></tr>
+<tr><th>push</th><td class="cue" data-action="push"></td><td class="when">git push starts</td><td><div class="clip"><button data-src="free/push.wav" aria-label="Play push (free)">▶</button><span>NASA Apollo countdown &quot;…liftoff&quot;<small>NASA · US government work, not copyrighted (nasa.gov/nasa-brand-center/images-and-media) · <a href="https://www.nasa.gov/historical-sounds/">source</a></small></span></div></td><td class="none">the free one plays</td></tr>
+<tr><th>force</th><td class="cue" data-action="force"></td><td class="when">a command with --force or --no-verify starts</td><td><div class="clip"><button data-src="free/force.wav" aria-label="Play force (free)">▶</button><span>Kenney &quot;Fire in the hole!&quot;<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/voiceover-pack">source</a></small></span></div></td><td class="none">the free one plays</td></tr>
+<tr><th>destructive</th><td class="cue" data-action="destructive"></td><td class="when">rm -rf, git reset --hard, git clean -f, a force push or DROP TABLE starts</td><td><div class="clip"><button data-src="free/destructive.wav" aria-label="Play destructive (free)">▶</button><span>Wilhelm-style scream<small>&quot;Helmut Scream&quot; by creativeheroes (freesound.org/s/84353), via &quot;Aargh male screams&quot; by congusbongus on OpenGameArt · CC-BY 3.0 (attribution required) · <a href="https://opengameart.org/content/aargh-male-screams">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/destructive.wav" aria-label="Play destructive (personal)">▶</button><span>Wilhelm scream <a href="https://www.myinstants.com/media/sounds/wilhelm.mp3">source</a></span></div></td></tr>
+<tr><th>install</th><td class="cue" data-action="install"></td><td class="when">a package install starts (npm, pip, uv, cargo, winget …)</td><td><div class="clip"><button data-src="free/install.wav" aria-label="Play install (free)">▶</button><span>Dial-up modem<small>&quot;MODEM_1.aif&quot; by G_M_D_THREE · CC0 · <a href="https://freesound.org/s/454651/">source</a></small></span></div></td><td class="none">the free one plays</td></tr>
+<tr><th>compacted</th><td class="cue" data-action="compacted"></td><td class="when">the conversation is compacted</td><td><div class="clip"><button data-src="free/compacted.wav" aria-label="Play compacted (free)">▶</button><span>Kenney interface minimize<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/interface-sounds">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/compacted.wav" aria-label="Play compacted (personal)">▶</button><span>&quot;To Be Continued&quot; (Yes, Roundabout) <a href="https://www.myinstants.com/media/sounds/2to-be-continued.mp3">source</a></span></div></td></tr>
+<tr><th>background-done</th><td class="cue" data-action="background-done"></td><td class="when">a background task&#x27;s notification arrives (a subagent&#x27;s only with the subagents setting on)</td><td><div class="clip"><button data-src="free/background-done.wav" aria-label="Play background-done (free)">▶</button><span>Kenney music jingle<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/music-jingles">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/background-done.wav" aria-label="Play background-done (personal)">▶</button><span>Pokemon Center heal jingle <a href="https://www.myinstants.com/media/sounds/pkmncenter.mp3">source</a></span></div></td></tr>
+<tr><th>task-done</th><td class="cue" data-action="task-done"></td><td class="when">a win, when the win call&#x27;s own sound is off</td><td><div class="clip"><button data-src="free/task-done.wav" aria-label="Play task-done (free)">▶</button><span>Kenney &quot;Mission completed&quot;<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/voiceover-pack">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/task-done.wav" aria-label="Play task-done (personal)">▶</button><span>Final Fantasy victory fanfare <a href="https://www.myinstants.com/media/sounds/ff1_victory_fanfare.mp3">source</a></span></div></td></tr>
+<tr><th>interrupted</th><td class="cue" data-action="interrupted"></td><td class="when">you interrupt a turn</td><td><div class="clip"><button data-src="free/interrupted.wav" aria-label="Play interrupted (free)">▶</button><span>Kenney &quot;Hold!&quot;<small>Kenney (kenney.nl) · CC0 · <a href="https://kenney.nl/assets/voiceover-pack">source</a></small></span></div></td><td><div class="clip"><button data-src="personal/interrupted.wav" aria-label="Play interrupted (personal)">▶</button><span>Pac-Man death <a href="https://www.myinstants.com/media/sounds/pac-man-death.mp3">source</a></span></div></td></tr>
+</tbody></table>
+<div class="band" aria-live="polite"><span class="cue-line"><span class="idle">a cue shows here for a few seconds when a clip plays</span></span><span class="prompt">&gt;</span></div>
+<script>
+const CUES = {"compacted": {"color": "ide", "frames": ["◀   ▶", " ◀ ▶ ", "  ◆  ", "  ◆  "]}, "background-done": {"color": "ide", "frames": ["    ●", "   ● ", "  ●  ", " ●   ", "●    "]}, "question": {"color": "permission", "frames": ["  ?  ", " ‹?› ", "‹ ? ›", " ‹?› "]}, "permission": {"color": "permission", "frames": ["▐███▌", "▐█ █▌", "▐   ▌", "▐█ █▌"]}, "subagent": {"color": "claude", "frames": ["  ●  ", " ●○  ", " ● ○ ", "●   ○", "●    "]}, "edit": {"color": "claude", "frames": ["▏    ", "━▏   ", "━━▏  ", "━━━▏ ", "━━━━▏"]}, "big-refactor": {"color": "claude", "frames": ["▚▞▚▞▚", "▞▚▞▚▞", "▙▟▙▟▙", "▛▜▛▜▛"]}, "install": {"color": "claude", "frames": ["▱▱▱▱▱", "▰▱▱▱▱", "▰▰▱▱▱", "▰▰▰▱▱", "▰▰▰▰▱", "▰▰▰▰▰"]}, "tests-fail": {"color": "error", "frames": ["  ╳  ", " ╳ ╳ ", "╳ ╳ ╳", " ╳ ╳ "]}, "green-after-red": {"color": "success", "frames": ["╳    ", "╳ ›  ", "╳ › ›", "    ✓", "  ✓  "]}, "tool-error": {"color": "error", "frames": ["░▒▓▒░", "▒▓░▓▒", "▓░▒░▓"]}, "commit": {"color": "merged", "frames": ["──○──", "──◎──", "──●──", "──●──"]}, "push": {"color": "merged", "frames": ["»    ", " »»  ", "  »»»", "   »»", "    »"]}, "force": {"color": "warning", "frames": ["▶    ", "▶▶   ", "▶▶▶  ", "▶▶▶▶ ", "▶▶▶▶▶"]}, "destructive": {"color": "error", "frames": ["█████", "█▓█▓█", "▓▒▓▒▓", "▒░▒░▒", "░ ░ ░"]}, "task-done": {"color": "success", "frames": ["  ✦  ", " ·✦· ", "· ✦ ·", " ·✦· "]}, "interrupted": {"color": "inactive", "frames": ["━━━━━", "━━━╸ ", "━━╸  ", "━╸   ", "╸    "]}}, TICK = 130, SHOW = 2600
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+const cells = frame => [...frame].map(c => `<i>${c === ' ' ? '' : c}</i>`).join('')
+const at = (look, n) => look.frames[still ? Math.floor(look.frames.length / 2) : n % look.frames.length]
+
+// The Cue column loops every action's motion; the band plays one from its first frame for SHOW ms, like the mod.
+const rows = [...document.querySelectorAll('td.cue')].filter(td => CUES[td.dataset.action])
+for (const td of rows) td.style.color = `var(--${CUES[td.dataset.action].color})`
+let tick = 0
+const draw = () => { for (const td of rows) td.innerHTML = cells(at(CUES[td.dataset.action], tick)) }
+draw(); if (!still) setInterval(() => { tick += 1; draw() }, TICK)
+
+const line = document.querySelector('.cue-line'), idle = line.innerHTML
+let shown = null
+const show = action => {
+  const look = CUES[action]; if (!look) return
+  clearInterval(shown)
+  let frame = 0
+  const paint = () => { line.innerHTML = `<span style="color: var(--${look.color})">${cells(at(look, frame))} ${action}</span>` }
+  paint()
+  shown = setInterval(() => { frame += 1; if (frame * TICK >= SHOW) { clearInterval(shown); line.innerHTML = idle } else paint() }, TICK)
+}
+
+let current = null
+for (const b of document.querySelectorAll('button[data-src]')) {
+  const probe = new Audio(); probe.preload = 'metadata'
+  probe.onerror = () => { b.disabled = true; b.title = 'Not built on this machine' }
+  probe.src = b.dataset.src
+  b.onclick = () => {
+    if (current) { current.audio.pause(); current.button.classList.remove('playing') }
+    const audio = new Audio(b.dataset.src); current = { audio, button: b }
+    b.classList.add('playing'); audio.onended = () => b.classList.remove('playing'); audio.play()
+    show(b.closest('tr').querySelector('td.cue').dataset.action)
+  }
+}
+</script>
+</body></html>

@@ -1,0 +1,11 @@
+# Laid by Claude Code at every load
+.claude-plugin/types/
+tsconfig.json
+# Copyrighted: rebuilt locally from the links in scripts/packs.json, never committed
+sounds/personal/
+# The game voices (Epic, id Software): built locally by scripts/sounds.py
+sounds/ut99/
+sounds/ut2003/
+sounds/ut2004-female/
+sounds/xan/
+sounds/quake3/

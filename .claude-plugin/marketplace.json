@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-code-vibe-mods",
+  "description": "Small Claude Code mods that run beside the chat and cost no tokens.",
+  "owner": { "name": "Andre Fontoura" },
+  "plugins": [
+    {
+      "name": "announcer",
+      "description": "A game announcer's call when Claude finishes a task, and a sound for what it does on the way (asks, commits, pushes, fails a test).",
+      "source": "./announcer",
+      "category": "productivity"
+    },
+    {
+      "name": "breathe",
+      "description": "A short breathing exercise beside the chat: /breathe, on a schedule, or when your prompts run hot.",
+      "source": "./breathe",
+      "category": "productivity"
+    }
+  ]
+}

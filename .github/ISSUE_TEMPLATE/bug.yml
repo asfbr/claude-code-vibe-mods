@@ -1,0 +1,26 @@
+name: Something doesn't work
+description: A mod that doesn't load, play, draw or open as its README says
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This page is public: leave out prompts, paths or anything else you wouldn't post.
+        A security problem goes to *Security → Report a vulnerability*, not here.
+  - type: dropdown
+    id: mod
+    attributes:
+      label: Which one
+      options: [announcer, breathe, statusline]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Claude Code (`claude --version`), the mod's version (`claude plugin list`), and your OS.
