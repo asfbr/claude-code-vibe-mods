@@ -5,7 +5,8 @@ import type { Run, Words } from '../types'
 import { heat, localInsults } from './anger'
 import { PATTERNS, cyclesFor, encode, moment, paint, runSeconds } from './sky'
 
-const TRIGGER = 5 // summed heat that opens the window
+// Summed heat that opens the window, by the `sensitivity` setting.
+const TRIGGERS: Record<string, number> = { low: 8, normal: 5, high: 3 }
 const HALF_LIFE = 10 * 60_000 // heat halves every 10 minutes
 const HINT_MS = 5 * 60_000
 const PANE = 'breathe'
@@ -136,8 +137,11 @@ export const register: Register = (on, options) => {
   const windowMs = seconds * 1000 + 15_000 // its breathing plus Edge's start-up
   const every = duration(options.schedule)
   const cooldown = duration(options.cooldown) || 3_600_000
+  const trigger = TRIGGERS[String(options.sensitivity)] ?? TRIGGERS.normal!
   let level = 0
   let scoredAt = 0
+  let last = 0 // the last prompt's own heat, for /breathe heat
+  const heatNow = (now: number) => level * 0.5 ** ((now - scoredAt) / HALF_LIFE)
   let extra: RegExp | undefined // your own insults, from insults.local.txt
 
   on('session.start', async ($, e, next) => {
@@ -146,7 +150,7 @@ export const register: Register = (on, options) => {
     await $.command.register({
       name: 'breathe',
       description: 'A short breathing exercise beside the chat',
-      argumentHint: '[4-6|box|4-7-8]',
+      argumentHint: '[4-6|box|4-7-8|heat]',
       immediate: true,
     })
     if (every > 0) $.clock.every(every, () => void open($, breath, every - 60_000))
@@ -162,7 +166,15 @@ export const register: Register = (on, options) => {
   on('command.run', { command: 'breathe' }, async ($, e) => {
     const asked = e.args.trim()
     const names = Object.keys(PATTERNS)
-    if (asked !== '' && !names.includes(asked)) return { text: `breathe: pick ${names.join(', ')} or nothing` }
+    if (asked === 'heat') {
+      const now = await $.clock.now()
+      const wait = cooldown - (now - Number((await $.store.get('lastHot')) ?? 0))
+      const off = options.anger === 'off' ? ' Hot prompts are off.' : ''
+      return { text: `breathe: heat ${heatNow(now).toFixed(1)} of ${trigger} (sensitivity ${options.sensitivity}), `
+        + `the last prompt ${last.toFixed(1)}; it halves every 10 min. Next hot break `
+        + `${wait > 0 ? `in ${Math.ceil(wait / 60_000)} min at the earliest` : 'possible now'}.${off}` }
+    }
+    if (asked !== '' && !names.includes(asked)) return { text: `breathe: pick ${names.join(', ')}, heat, or nothing` }
     return { text: await open($, asked === '' ? breath : { ...breath, pattern: asked }, windowMs) }
   })
 
@@ -202,9 +214,10 @@ export const register: Register = (on, options) => {
     const machine = MACHINE.has(origin?.kind ?? '') || (origin?.kind === 'plugin' && origin.asUser !== true)
     if (options.anger === 'off' || e.command !== undefined || e.isMeta === true || machine) return next(e)
     const now = await $.clock.now()
-    level = level * 0.5 ** ((now - scoredAt) / HALF_LIFE) + heat(e.text, extra)
+    last = heat(e.text, extra)
+    level = heatNow(now) + last
     scoredAt = now
-    if (level >= TRIGGER && now - Number((await $.store.get('lastHot')) ?? 0) >= cooldown) {
+    if (level >= trigger &&now - Number((await $.store.get('lastHot')) ?? 0) >= cooldown) {
       level = 0
       await $.store.set('lastHot', now)
       if (options.anger === 'hint') {

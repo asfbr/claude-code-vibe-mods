@@ -61,9 +61,11 @@ const play = async ($: EngineInterface, asset: string, volume: number): Promise<
     return cut(err instanceof Error ? err.message : String(err), 300)
   }
 }
+// False when dropped, another clip playing.
 const playAction = ($: EngineInterface, asset: string, volume: number) => {
-  if (playing) return
+  if (playing) return false
   playing = play($, asset, volume).finally(() => { playing = undefined })
+  return true
 }
 const playWin = async ($: EngineInterface, asset: string, volume: number) => {
   if (winPlaying) return
@@ -85,6 +87,8 @@ type Pack = {
   found: Map<Action, string[]>
   played: Map<Action, number>
   heard: Set<Action> // once-per-turn actions already sounded this turn
+  spacing: number // the `spacing` setting: an action sounds again only this long after it last did
+  soundedAt: Map<Action, number>
   cues: boolean
   timer?: Timer // the cue on screen's frames
   shownId: number
@@ -136,12 +140,18 @@ async function cue($: EngineInterface, pack: Pack, action: Action, detail: strin
   }
 }
 
-// The action's clip, then its cue: an action dropped while another clip plays still shows, replacing that cue.
+// These wait on you or warn you, so they sound every time, whatever `spacing` says.
+const UNSPACED = new Set<Action>(['question', 'permission', 'force', 'destructive', 'task-done'])
+
+// The action's clip, then its cue: an action dropped while another clip plays, or too soon after its last
+// sound (`spacing`), still shows, replacing that cue.
 async function sound($: EngineInterface, pack: Pack, action: Action, detail = '', once = false) {
   if (pack.choice[action] === 'off' || (once && pack.heard.has(action))) return
   pack.heard.add(action)
-  const clip = await clipFor($, pack, action)
-  if (clip !== undefined) playAction($, clip, pack.volume)
+  const now = await $.clock.now()
+  const soon = !UNSPACED.has(action) && now - (pack.soundedAt.get(action) ?? -Infinity) < pack.spacing
+  const clip = soon ? undefined : await clipFor($, pack, action)
+  if (clip !== undefined && playAction($, clip, pack.volume)) pack.soundedAt.set(action, now)
   await cue($, pack, action, detail)
 }
 
@@ -155,7 +165,10 @@ export const register: Register = (on, options) => {
   const cues = options.cues !== false
   const subagents = options.subagents === true // a subagent's spawn and its end notification sound too
   quietOnMic = options.calls !== false
-  const pack: Pack = { fallback, choice, volume, found: new Map(), played: new Map(), heard: new Set(), cues, shownId: 0 }
+  const spacing = (parseInt(String(options.spacing), 10) || 0) * 60_000 // "5 min" → 300000; "any time" → 0
+  const eachAction = options.each_action === true // the per-action rows show in /config
+  const pack: Pack = { fallback, choice, volume, found: new Map(), played: new Map(), heard: new Set(), spacing,
+    soundedAt: new Map(), cues, shownId: 0 }
   let edited = false
   let check: boolean | undefined // the last check of the turn: passed, failed, or none ran
   let lastCheck: boolean | undefined // the last check of any turn, for green after red
@@ -172,12 +185,13 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // Each action's /config row says what its `default` stands for now: the `actions` setting's pack.
+  // Each action's /config row says what its `default` stands for now: the `actions` setting's pack. The 17
+  // rows show only with `each_action` on; hidden, they still apply and still answer /config key=value.
   on('config.describe', async ($, e, next) => {
     const field = /^announcer(?:@[\w-]+)?\.(\w+)$/.exec(e.key)?.[1]
     const shown = await next(e)
     if (field === undefined || !ACTIONS.includes(field.replace(/_/g, '-') as Action)) return shown
-    return { ...shown, label: `${shown.label} (default = ${fallback})` }
+    return { ...shown, label: `${shown.label} (default = ${fallback})`, isHidden: shown.isHidden || !eachAction }
   })
 
   // Under the prompt, below the custom status line: the last win's line, dim at the hint row's end.
@@ -219,7 +233,9 @@ export const register: Register = (on, options) => {
         const files = (await clips($, pack, a)).map(f => f.replace(/^sounds\//, '')).join(', ')
         return `${a} [${pack.choice[a]}]: ${WHEN[a]} → ${pack.choice[a] === 'off' ? 'off' : files || 'silent, no clip'}`
       }))
-      return { text: `Action sounds [pack] (default ${pack.fallback}; each one's own in /config), when → clip:\n${rows.join('\n')}` }
+      const where = eachAction ? 'its own row in /config' : "/config, with 'Action sounds: one row each' on"
+      const gap = spacing > 0 ? `; each sounds again ${spacing / 60_000} min after it last did, but ${[...UNSPACED].join(', ')}` : ''
+      return { text: `Action sounds [pack] (default ${pack.fallback}; set one in ${where}${gap}), when → clip:\n${rows.join('\n')}` }
     }
     const asked = e.args.trim() === '' ? '' : `no action "${name ?? verb}". `
     return { text: `${asked}/announcer list, or /announcer <action> to hear one: ${ACTIONS.join(', ')}` }
@@ -290,7 +306,7 @@ ${result?.stderr ?? ''}`)
   on('turn.complete', async ($, e, next) => {
     if (e.agentId !== undefined) return next(e)
     if (e.isAborted) { await sound($, pack, 'interrupted', 'you stopped the turn'); return next(e) }
-    if (e.reason === 'error' || e.reason === 'refusal') return next(e) // a dead turn is no win
+    if (detect === 'off' || e.reason === 'error' || e.reason === 'refusal') return next(e) // a dead turn is no win
     const said = detect === 'tools' ? undefined : spoken(e.answer, theme)
     const earned = detect !== 'marker' && edited && check === true
     if (said === undefined && !earned) {

@@ -1,23 +1,30 @@
 {
   "name": "announcer",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A game announcer's call when Claude finishes a task, and a sound for what it does on the way (asks, commits, pushes, fails a test).",
   "author": { "name": "Andre Fontoura" },
   "license": "MIT",
   "types": "./types/index.d.ts",
   "userConfig": {
-    "detect": {
+    "theme": {
       "type": "string",
-      "title": "How a win is detected",
-      "description": "marker: Claude's own spaced-caps call in its answer. tools: the turn edited files and its last test/build/lint passed. both: either.",
-      "default": "both",
-      "options": ["both", "marker", "tools"]
+      "title": "Win call: announcer",
+      "description": "Which announcer's calls and sounds.",
+      "default": "ut99",
+      "options": ["ut99", "ut2003", "ut2004-female", "xan", "quake3"]
     },
     "sound": {
       "type": "boolean",
-      "title": "Play the win call's sound",
+      "title": "Win call: sound",
       "description": "Off: the call is text only, and the action pack's task-done sound marks the win instead.",
       "default": true
+    },
+    "detect": {
+      "type": "string",
+      "title": "Win call: how a win is detected",
+      "description": "marker: Claude's own spaced-caps call in its answer. tools: the turn edited files and its last test/build/lint passed. both: either. off: no win calls at all, action sounds only (drop the CLAUDE.md line too). 'Action sounds' off is the other way round.",
+      "default": "both",
+      "options": ["both", "marker", "tools", "off"]
     },
     "volume": {
       "type": "string",
@@ -26,36 +33,42 @@
       "default": "35%",
       "options": ["100%", "70%", "50%", "35%", "20%", "10%"]
     },
-    "theme": {
-      "type": "string",
-      "title": "Announcer",
-      "description": "Which announcer's calls and sounds.",
-      "default": "ut99",
-      "options": ["ut99", "ut2003", "ut2004-female", "xan", "quake3"]
-    },
-    "actions": {
-      "type": "string",
-      "title": "Action sounds: every action",
-      "description": "A sound for what Claude does: asks you, commits, pushes, fails a test, gets compacted. free: the shipped pack. personal: your own clips (scripts/packs.py), the free one where you have none. Each action below can override it. /announcer list shows them.",
-      "default": "free",
-      "options": ["free", "personal", "off"]
-    },
-    "cues": {
-      "type": "boolean",
-      "title": "Action cues",
-      "description": "A one-line animation just above the prompt, naming the action and what triggered it, while its sound plays. An action set off gets neither.",
-      "default": true
-    },
     "calls": {
       "type": "boolean",
       "title": "Quiet on calls",
       "description": "No sound while any app is using the microphone (a call, dictation); cues still show. Windows only.",
       "default": true
     },
+    "actions": {
+      "type": "string",
+      "title": "Action sounds",
+      "description": "A sound for what Claude does: asks you, commits, pushes, fails a test, gets compacted. free: the shipped pack. personal: your own clips (scripts/packs.py), the free one where you have none. 'Action sounds: one row each' lets each action override it. /announcer list shows them.",
+      "default": "free",
+      "options": ["free", "personal", "off"]
+    },
+    "spacing": {
+      "type": "string",
+      "title": "Action sounds: same one again after",
+      "description": "An action that sounded this recently stays silent (its cue still shows): fewer edit, test and error sounds on a busy run. Questions, permission dialogs, force and destructive commands always sound.",
+      "default": "any time",
+      "options": ["any time", "2 min", "5 min", "15 min"]
+    },
+    "cues": {
+      "type": "boolean",
+      "title": "Action sounds: cues",
+      "description": "A one-line animation just above the prompt, naming the action and what triggered it, while its sound plays. An action set off gets neither.",
+      "default": true
+    },
     "subagents": {
       "type": "boolean",
-      "title": "Sounds for subagents",
+      "title": "Action sounds: subagents",
       "description": "Off: spawning a subagent and its end notification make no sound and no cue. A subagent's permission dialog always sounds.",
+      "default": false
+    },
+    "each_action": {
+      "type": "boolean",
+      "title": "Action sounds: one row each",
+      "description": "Show a row per action below, to set one off or to another pack. Off hides the rows; what they are set to still applies (/announcer list shows it).",
       "default": false
     },
     "question": {

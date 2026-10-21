@@ -10,17 +10,22 @@ nothing it does reaches the model.
 ![The pane mid-breath: a blue glow ringed by drifting contour lines and dust, "breathe in 2" under it](../docs/screenshots/breathe-in.png)
 
 In the terminal the picture is drawn in character cells, 30 frames a second: the glow as coloured half blocks,
-the lines and dust as braille dots. The pane opens at once and takes no keys. The old Edge window is still there
+the lines and dust as braille dots. A pane wider than the nebula widens it a little and fills the rest with
+faint stars. The pane opens at once and takes no keys. The old Edge window is still there
 (`where`: `window`), and opens instead wherever a pane cannot be drawn.
 
 Three ways it opens:
 
 - `/breathe` (or `/breathe box`, `/breathe 4-7-8`): runs at once, even mid-turn.
 - **Hot prompts**: each prompt you type is scored locally, in English and Portuguese: "again?", "still broken",
-  "quantas vezes", insults, ALL CAPS; code in backticks ignored. Swearing and `!!!`/`??` only make those
-  louder: on their own they score nothing, so casual swearing never opens it. The score fades by half every
-  10 minutes and opens the window at 5; repeats compound, so one very heated prompt can open it alone, and
-  milder ones add up over a run. At most once an hour, across sessions. The prompt itself goes on untouched.
+  "quantas vezes", insults, ALL CAPS; code in backticks ignored. A swear counts when it is aimed: at Claude
+  ("fuck you", "vai se foder"), at what broke ("the build is fucking broken", "porra, de novo"), or as a bare
+  outburst ("fuck."). Any other swear, and `!!!`/`??`, only make the rest louder, so casual or glad swearing
+  ("explain it fucking better", "holy shit it works") never opens it. The score fades by half every
+  10 minutes and opens the window at 5 (`sensitivity`: 3 on high, 8 on low); repeats compound, so one very
+  heated prompt can open it alone, and milder ones add up over a run. At most once an hour, across sessions.
+  `/breathe heat` shows the score now, the last prompt's, and when the next break may open. The prompt itself
+  goes on untouched.
   To score words of your own as insults, put them in `insults.local.txt` in this folder (gitignored): one per
   line, each a regex fragment matched as a whole word, case-insensitive (`dumb\w*` also catches "dumbest").
   Lines starting with `#` are comments. It is read when a session starts.
@@ -49,7 +54,8 @@ Windows, `:` elsewhere), and restart Claude Code. `claude plugin list` should sh
 ## Options (`/config`)
 
 - `where`: `pane` (default) or `window` (Edge, bottom-right of the screen, on top of everything).
-- `anger`: `open` (default), `hint` (a status-line "rough one? /breathe" for 5 minutes), `off`. `cooldown`: 30 min, 1 h, 2 h.
+- `anger`: `open` (default), `hint` (a status-line "rough one? /breathe" for 5 minutes), `off`. `sensitivity`:
+  `high` (opens at 3), `normal` (5, default), `low` (8). `cooldown`: 30 min, 1 h, 2 h.
 - `schedule`: `off` (default), 30 min … 2 h. Two sessions open still give one window per interval.
 - `pattern`: `4-6` (in 4, out 6; default), `box` (4-4-4-4), `4-7-8`. `length`: 15 s, 30 s (default), 1 min, 2 min,
   rounded to whole breaths.

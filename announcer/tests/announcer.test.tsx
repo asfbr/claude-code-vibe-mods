@@ -161,3 +161,12 @@ test('both: one win per turn, by either', { options: { detect: 'both', sound: fa
   expect(await winShown($, seen)).toBe('KILLING SPREE · streak 2')
   expect(seen.toasts).toEqual(['K I L L I N G   S P R E E'])
 })
+
+test('off: no win by either way, no toast, no line, no call', { options: { detect: 'off', sound: true } }, async ($, on) => {
+  const seen = world(on)
+  await turn($, '**H E A D S H O T**', win)
+  await settle()
+  expect(await winShown($, seen)).toBe('')
+  expect(seen.toasts).toEqual([])
+  expect(seen.sounds.filter(s => /sounds[\/]ut99/.test(s))).toEqual([])
+})

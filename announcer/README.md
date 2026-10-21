@@ -44,13 +44,19 @@ show `announcer@...` loaded.
 ## Options (`/config`)
 
 - `detect`: `both` (default), `marker` (Claude's call only), `tools` (edits + green check; Claude's call
-  is ignored, so drop the CLAUDE.md line too). The line costs ~150 tokens (cached) and ~10 per call.
+  is ignored, so drop the CLAUDE.md line too), `off` (no win calls at all: action sounds only, no CLAUDE.md
+  line). The line costs ~150 tokens (cached) and ~10 per call. For win calls only, set `actions` to `off`.
 - `theme`: `ut99` (default), `ut2003`, `ut2004-female`, `xan` (the UT99 boss), `quake3`.
 - `sound`: the win call's sound; off = the call is text only, and the action pack's `task-done` marks the win.
   `volume`: 100% … 10% (default 35%), for calls and actions alike.
 - `actions`: `free` (default), `personal` (your own clips, the free one where you have none), `off`.
+- `spacing`: `any time` (default), `2 min`, `5 min`, `15 min`: an action that sounded this recently stays
+  silent, its cue still showing (fewer edit, test and error sounds on a busy run). `question`, `permission`,
+  `force`, `destructive` and the win always sound.
 - One setting per action (`push`, `big_refactor` …: setting keys take `_` for `-`): `default` follows
   `actions`; `free`, `personal` or `off` overrides it for that action alone. An action set `off` gets no cue either.
+  These 17 rows show in `/config` only with `each_action` ("one row each") on; hidden, what they are set to still
+  applies, and `/announcer list` shows it.
 - `cues` (default on): each action's visual cue, below. Off = sounds only.
 - `calls` (default on): no sound, win calls included, while any app is using the microphone (a call, a meeting
   recorder, dictation), read from Windows' own microphone-use list; cues still show. Windows only.

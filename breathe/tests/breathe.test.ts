@@ -62,19 +62,36 @@ const HOT = [
 ]
 
 describe('heat', () => {
-  test('swearing and !!! alone are not anger, however much of it', async () => {
+  test('casual swearing and !!! are not anger: as an intensifier, in glee, in passing', async () => {
     expect(heat('explain fucking better')).toBe(0)
-    expect(heat('fuck fuck fuck, this shit is a motherfucker')).toBe(0)
     expect(heat('nice!!! that fucking worked??')).toBe(0)
+    expect(heat('holy shit, it finally works')).toBe(0)
+    expect(heat('fuck yeah')).toBe(0)
+    expect(heat('you know, this damn framework has a weird config format')).toBe(0)
+    expect(heat('the splash screen was a piece of shit, nobody waits for it')).toBe(0)
     expect(heat('can you rename the hook')).toBe(0)
+  })
+
+  test('swearing aimed at you, at what broke, or a bare outburst is anger', async () => {
+    expect(heat('fuck you')).toBe(2) // aimed 1, amplified by its own swear 1
+    expect(heat('fuck off')).toBe(2)
+    expect(heat('vai se foder')).toBe(2)
+    expect(heat('vsf')).toBe(2)
+    expect(heat('you fucking broke it')).toBe(2)
+    expect(heat('the build is fucking broken')).toBe(2)
+    expect(heat('caralho, quebrou tudo')).toBe(2)
+    expect(heat('fuck.')).toBe(2)
+    expect(heat('porra')).toBe(2)
+    expect(heat('fuck fuck fuck, this shit is a motherfucker')).toBe(6) // an outburst, amplified fivefold
   })
 
   test('frustration, insults and shouting score; swears and !!! amplify them', async () => {
     expect(heat('you imbecile')).toBe(1)
     expect(heat('seu idiota')).toBe(1)
     expect(heat('WHY DOES THIS KEEP FAILING!!!')).toBe(4) // all caps 3 + !!! 1
-    expect(Math.abs(heat('porra, de novo não funciona') - (1 + 2 ** 1.5))).toBeLessThan(1e-9) // repeats compound
-    expect(heat('fuck. again?? how many times do I have to tell you')).toBeLessThan(5)
+    expect(Math.abs(heat('de novo não funciona') - 2 ** 1.5)).toBeLessThan(1e-9) // repeats compound
+    expect(heat('porra, de novo não funciona')).toBe(6) // the swear is aimed at what broke: a third, then amplifies
+    expect(heat('still broken?? you idiot')).toBeLessThan(5)
     expect(heat('fuck fuck fuck, again?')).toBeGreaterThanOrEqual(5) // one very heated prompt opens it alone
   })
 
@@ -134,10 +151,10 @@ describe('hot prompts', () => {
     expect(seen.panes).toHaveLength(2)
   })
 
-  test('heat fades: the same prompts spread over hours never add up', async ($, on) => {
+  test('heat fades: warm prompts spread over hours never add up', async ($, on) => {
     const { clock, opened } = world(on)
     await start($)
-    for (const text of [...HOT, ...HOT]) { await say($, text); await clock.advance(90 * MIN) }
+    for (let i = 0; i < 6; i++) { await say($, 'still broken?? you idiot'); await clock.advance(90 * MIN) }
     expect(opened()).toBe(0)
   })
 
@@ -170,6 +187,54 @@ describe('hot prompts', () => {
     world(on)
     await start($)
     for (const text of HOT) expect((await say($, text)).text).toBe(text)
+  })
+})
+
+describe('sensitivity', () => {
+  const WARM = 'still broken?? you idiot' // 3.8: one opens it on high, two on normal, not even two on low
+  const twice = async ($: Engine, clock: { advance(ms: number): Promise<unknown> }) => {
+    for (let i = 0; i < 2; i++) { await say($, WARM); await clock.advance(30_000) }
+  }
+
+  test('high: one warm prompt opens it', { options: { sensitivity: 'high' }, timeoutMs: 30_000 }, async ($, on) => {
+    const { opened } = world(on)
+    await start($)
+    await say($, WARM)
+    expect(opened()).toBe(1)
+    expect((await breathe($, 'heat')).text).toMatch(/Next hot break in 60 min at the earliest\.$/)
+  })
+
+  test('normal: one warm prompt does not, two do', { timeoutMs: 30_000 }, async ($, on) => {
+    const { clock, opened } = world(on)
+    await start($)
+    await say($, WARM)
+    expect(opened()).toBe(0)
+    await clock.advance(30_000)
+    await say($, WARM)
+    expect(opened()).toBe(1)
+  })
+
+  test('low: two warm prompts do not', { options: { sensitivity: 'low' } }, async ($, on) => {
+    const { clock, opened } = world(on)
+    await start($)
+    await twice($, clock)
+    expect(opened()).toBe(0)
+  })
+
+  test('high: an hour of casual swearing still never opens it', { options: { sensitivity: 'high' } }, async ($, on) => {
+    const { clock, opened } = world(on)
+    await start($)
+    for (let i = 0; i < 60; i++) { await say($, CASUAL[i % 2]!); await clock.advance(MIN) }
+    expect(opened()).toBe(0)
+  })
+
+  test('/breathe heat shows the heat, its trigger and the cooldown', { options: { sensitivity: 'low' } }, async ($, on) => {
+    const { clock } = world(on)
+    await start($)
+    expect((await breathe($, 'heat')).text).toBe('breathe: heat 0.0 of 8 (sensitivity low), the last prompt 0.0; it halves every 10 min. Next hot break possible now.')
+    await say($, WARM)
+    await clock.advance(10 * MIN)
+    expect((await breathe($, 'heat')).text).toMatch(/^breathe: heat 1\.9 of 8 \(sensitivity low\), the last prompt 3\.8;/)
   })
 })
 
@@ -231,7 +296,7 @@ describe('/breathe in the pane', () => {
   test('an unknown pattern is refused with the choices', async ($, on) => {
     const { opened } = world(on)
     await start($)
-    expect((await breathe($, 'fast')).text).toBe('breathe: pick 4-6, box, 4-7-8 or nothing')
+    expect((await breathe($, 'fast')).text).toBe('breathe: pick 4-6, box, 4-7-8, heat, or nothing')
     expect(opened()).toBe(0)
   })
 })

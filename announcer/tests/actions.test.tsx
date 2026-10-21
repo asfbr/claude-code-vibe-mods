@@ -232,13 +232,52 @@ describe('action sounds', () => {
   const onCall: Player = command => ({ exitCode: command.includes('microphone') && command.includes('exit 3') ? 3 : 0, stderr: '' })
   const run = ($: Engine, args: string) => $.command.run({ command: 'announcer', args, origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 } })
 
-  test("an action's /config row names the pack its default stands for; other rows are left alone", { options: { ...quiet, actions: 'personal' } }, async ($, on) => {
+  const row = ($: Engine, key: string, label: string) =>
+    $.config.describe({ key, label, isHidden: false, provider: { plugin: 'announcer' } } as never)
+
+  test("an action's /config row names the pack its default stands for; other rows are left alone", { options: { ...quiet, actions: 'personal', each_action: true } }, async ($, on) => {
     world(on)
     on('config.describe', ($, e) => ({ label: e.label, isHidden: false }))
-    const row = (key: string, label: string) => $.config.describe({ key, label, isHidden: false, provider: { plugin: 'announcer' } } as never)
-    expect((await row('announcer.big_refactor', 'Action: big-refactor')).label).toBe('Action: big-refactor (default = personal)')
-    expect((await row('announcer@inline.push', 'Action: push')).label).toBe('Action: push (default = personal)')
-    expect((await row('announcer.volume', 'Volume')).label).toBe('Volume')
+    expect(await row($, 'announcer.big_refactor', 'Action: big-refactor')).toEqual({ label: 'Action: big-refactor (default = personal)', isHidden: false })
+    expect((await row($, 'announcer@inline.push', 'Action: push')).label).toBe('Action: push (default = personal)')
+    expect((await row($, 'announcer.volume', 'Volume')).label).toBe('Volume')
+  })
+
+  test("the action rows hide until 'one row each' is on, and still apply hidden", { options: { ...quiet, push: 'off' } }, async ($, on) => {
+    const played = world(on)
+    on('config.describe', ($, e) => ({ label: e.label, isHidden: false }))
+    expect((await row($, 'announcer.push', 'Action: push')).isHidden).toBe(true)
+    expect((await row($, 'announcer.volume', 'Volume')).isHidden).toBe(false)
+    await turn($, async $ => { await bash($, 'git push') })
+    expect(played).toEqual([])
+    expect((await run($, 'list')).text).toMatch(/set one in \/config, with 'Action sounds: one row each' on\)/)
+  })
+
+  test('spacing: an action sounds again only once its gap has passed; its cue still shows', { options: { ...quiet, spacing: '5 min' } }, async ($, on) => {
+    const played = world(on)
+    await turn($, async $ => { await edit($) })
+    await clock.advance(2 * 60_000)
+    await turn($, async $ => { await edit($); await bash($, 'git push') })
+    expect(await bandLine($)).toMatch(/push/)
+    await clock.advance(2 * 60_000)
+    await turn($, async $ => { await edit($) })
+    expect(await bandLine($)).toMatch(/edit {2}a\.js/)
+    await clock.advance(2 * 60_000)
+    await turn($, async $ => { await edit($) })
+    expect(played).toEqual(['sounds/free/edit.wav', 'sounds/free/push.wav', 'sounds/free/edit.wav'])
+  })
+
+  test('spacing never holds back what waits on you or warns you', { options: { ...quiet, spacing: '15 min' } }, async ($, on) => {
+    const played = world(on)
+    for (let i = 0; i < 2; i++) {
+      await turn($, async $ => {
+        await $.tool.call({ tool: 'AskUserQuestion', questions: [] }); await settle()
+        await $.classic.PermissionRequest({ tool_name: 'Bash', tool_input: { command: 'ls' } }); await settle()
+        await bash($, 'rm -rf build'); await bash($, 'git push')
+      })
+    }
+    expect(played).toEqual(['sounds/free/question.wav', 'sounds/free/permission.wav', 'sounds/free/destructive.wav', 'sounds/free/push.wav',
+      'sounds/free/question.wav', 'sounds/free/permission.wav', 'sounds/free/destructive.wav'])
   })
 
   test('on a call (the microphone in use) clips stay silent, and the audition says why', { options: quiet }, async ($, on) => {

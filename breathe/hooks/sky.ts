@@ -85,6 +85,9 @@ const motes = Array.from({ length: MOTES }, () => ({
   angle: seed() * Math.PI * 2, reach: 1.15 + seed() ** 1.6 * 1.6,
   twinkle: 0.6 + seed() * 2.2, phase: seed() * Math.PI * 2,
 }))
+// Far stars for a pane wider than the nebula: a fixed field over the whole pane, lit only outside the dust.
+const STARS = 900, STAR_AREA = 110 // one star per this many dots
+const stars = Array.from({ length: STARS }, () => ({ x: seed(), y: seed(), twinkle: 0.3 + seed() * 1.4, phase: seed() * Math.PI * 2 }))
 const wobble = (ring: typeof rings[number], a: number, time: number) => {
   let w = 0
   for (const v of ring.waves) w += v.amp * Math.sin(v.k * (a + ring.tilt) + v.phase + time * v.speed)
@@ -103,6 +106,8 @@ export function paint(m: Moment, time: number, columns: number, rows: number): U
   const W = columns * 2, H = rows * 4, cx = W / 2, cy = H / 2
   const S = Math.min(W, H) / 2 * 1.05 // the page's half-size; the outermost line reaches about 0.93 S
   const R = S * (0.3 + 0.36 * m.b)
+  // A wide pane (past 1.6:1 in dots, fully at 4:1) stretches the outer lines, glow and dust sideways.
+  const wide = Math.max(0, Math.min(1, (W / H - 1.6) / 2.4))
   const [core, edge] = m.colors
   const dots = new Uint8Array(columns * rows), ink = new Float32Array(columns * rows * 3), inkA = new Float32Array(columns * rows)
   const plot = (x: number, y: number, c: RGB, a: number) => {
@@ -116,13 +121,13 @@ export function paint(m: Moment, time: number, columns: number, rows: number): U
   const line = (j: number) => {
     const f = j / (RINGS - 1), off = R * (0.03 + 0.06 * f), spin = time * 0.21 * (1 + (j % 3) * 0.4) + j * 1.7
     return { x: cx + off * Math.cos(spin), y: cy + off * Math.sin(spin * 1.3), r: R * (0.55 + 0.85 * f),
-      amp: (0.045 + 0.1 * f ** 1.2) * (0.7 + 0.9 * m.motion), f }
+      amp: (0.045 + 0.1 * f ** 1.2) * (0.7 + 0.9 * m.motion), sx: 1 + 0.45 * wide * f }
   }
   const trace = (j: number, c: RGB, a: number, upTo = 1) => {
-    const { x, y, r, amp } = line(j), steps = Math.ceil(r * 2 * Math.PI * 1.5 * upTo)
+    const { x, y, r, amp, sx } = line(j), steps = Math.ceil(r * 2 * Math.PI * 1.5 * upTo * sx)
     for (let i = 0; i <= steps; i++) {
       const ang = (i / steps) * upTo * Math.PI * 2 - Math.PI / 2, rr = r * (1 + amp * wobble(rings[j]!, ang, time))
-      plot(x + rr * Math.cos(ang), y + rr * Math.sin(ang), c, a)
+      plot(x + rr * Math.cos(ang) * sx, y + rr * Math.sin(ang), c, a)
     }
   }
   for (let j = 1; j < RINGS; j += 2) { // every other line: at a few dots per line all 15 run together
@@ -134,14 +139,21 @@ export function paint(m: Moment, time: number, columns: number, rows: number): U
     const angle = d.angle + (0.042 * time + 0.24 * m.stirred) / d.reach
     const dist = S * (0.62 + (d.reach - 0.55) * (1.15 - 0.55 * m.b))
     const a = (0.18 + 0.32 * (0.5 + 0.5 * Math.sin(time * d.twinkle + d.phase))) * (0.5 + 0.5 * m.b)
-    plot(cx + dist * Math.cos(angle), cy + dist * Math.sin(angle) * 0.92, lerp(core, WHITE, 0.5), a * 1.6)
+    plot(cx + dist * Math.cos(angle) * (1 + 0.7 * wide), cy + dist * Math.sin(angle) * 0.92, lerp(core, WHITE, 0.5), a * 1.6)
+  }
+  const far = Math.min(STARS, Math.round(W * H / STAR_AREA))
+  for (let i = 0; i < far; i++) { // fade in past the dust's reach, so a pane the nebula fills shows none
+    const st = stars[i]!, x = st.x * W, y = st.y * H
+    const reach = Math.hypot((x - cx) / (1 + 0.7 * wide), y - cy) / S
+    const a = Math.min(1, Math.max(0, (reach - 1.9) / 0.8)) * (0.35 + 0.3 * Math.sin(time * st.twinkle + st.phase)) * (0.6 + 0.4 * m.b)
+    if (a > 0.05) plot(x, y, lerp(edge, WHITE, 0.6), a)
   }
 
   // The light under the lines: the sky, the glow, and the body inside the innermost line, all added.
   // No vignette: at these levels a step of 6 shows as a ring.
-  const glowR = R * 2.2, scale = (c: RGB, k: number): RGB => [c[0] * k, c[1] * k, c[2] * k]
+  const glowR = R * 2.2, glowX = 1 + 0.35 * wide, scale = (c: RGB, k: number): RGB => [c[0] * k, c[1] * k, c[2] * k]
   const field = (x: number, y: number): RGB => {
-    const d = Math.hypot(x, y), c: RGB = [...SKY], g = d / glowR
+    const d = Math.hypot(x, y), c: RGB = [...SKY], g = Math.hypot(x / glowX, y) / glowR
     const add = (l: RGB) => { c[0] += l[0]; c[1] += l[1]; c[2] += l[2] }
     if (g < 1) add(g < 0.35 ? lerp(scale(core, 0.32), scale(edge, 0.14), g / 0.35) : scale(edge, 0.14 * (1 - (g - 0.35) / 0.65)))
     const inner = R * (1 + (0.05 + 0.05 * m.motion) * wobble(rings[0]!, Math.atan2(y, x), time * 0.6))
