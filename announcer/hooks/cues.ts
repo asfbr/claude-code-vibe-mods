@@ -30,7 +30,7 @@ export const CUES: Record<Action, Cue> = {
 }
 
 export const TICK_MS = 130 // one frame
-export const CUE_MS = 2600 // how long a cue stays: 20 frames
+export const CUE_MS = 6000 // how long a cue stays by default: `cue_duration`'s default, and the audition page's
 
 // What triggered it, one line and short: a command, a file, a tool.
 export const cut = (text: string, max = 48) => {

@@ -90,6 +90,7 @@ type Pack = {
   spacing: number // the `spacing` setting: an action sounds again only this long after it last did
   soundedAt: Map<Action, number>
   cues: boolean
+  cueMs: number // the `cue_duration` setting: how long a cue stays on screen
   timer?: Timer // the cue on screen's frames
   shownId: number
 }
@@ -119,8 +120,8 @@ async function clipFor($: EngineInterface, pack: Pack, action: Action) {
   return list[n % Math.max(1, list.length)]
 }
 
-// Shows an action's cue above the prompt for CUE_MS, replacing the one on screen; a timer steps its frames
-// and stops with it, so nothing runs while idle.
+// Shows an action's cue above the prompt for the `cue_duration` setting, replacing the one on screen; a timer
+// steps its frames and stops with it, so nothing runs while idle.
 async function cue($: EngineInterface, pack: Pack, action: Action, detail: string) {
   if (!pack.cues) return
   pack.timer?.cancel()
@@ -130,7 +131,7 @@ async function cue($: EngineInterface, pack: Pack, action: Action, detail: strin
     await update($, shown, () => ({ id, action, detail: cut(detail), frame }))
     const timer = $.clock.every(TICK_MS, () => {
       frame += 1
-      const done = frame * TICK_MS >= CUE_MS
+      const done = frame * TICK_MS >= pack.cueMs
       if (done) timer.cancel()
       void update($, shown, c => c?.id !== id ? c : done ? null : { ...c, frame })
     })
@@ -163,12 +164,13 @@ export const register: Register = (on, options) => {
   const own = (a: Action) => String(options[a.replace(/-/g, '_')] ?? 'default') // setting keys take no hyphens
   const choice = Object.fromEntries(ACTIONS.map(a => [a, own(a) === 'default' ? fallback : own(a)])) as Record<Action, Choice>
   const cues = options.cues !== false
+  const cueMs = parseInt(String(options.cue_duration), 10) * 1000 || CUE_MS // "6 sec" → 6000
   const subagents = options.subagents === true // a subagent's spawn and its end notification sound too
   quietOnMic = options.calls !== false
   const spacing = (parseInt(String(options.spacing), 10) || 0) * 60_000 // "5 min" → 300000; "any time" → 0
   const eachAction = options.each_action === true // the per-action rows show in /config
   const pack: Pack = { fallback, choice, volume, found: new Map(), played: new Map(), heard: new Set(), spacing,
-    soundedAt: new Map(), cues, shownId: 0 }
+    soundedAt: new Map(), cues, cueMs, shownId: 0 }
   let edited = false
   let check: boolean | undefined // the last check of the turn: passed, failed, or none ran
   let lastCheck: boolean | undefined // the last check of any turn, for green after red

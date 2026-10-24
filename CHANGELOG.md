@@ -2,6 +2,11 @@
 
 The mods share one version, bumped together on each release.
 
+## 0.3.2
+
+- **announcer**: `cue_duration` sets how long an action's cue stays above the prompt (3 to 30 s), and the
+  default goes from 2.6 to 6 s: time to find which of several terminals just sounded.
+
 ## 0.3.1
 
 - **announcer**: `detect: off` turns the win calls off and keeps the action sounds (`actions: off` is the

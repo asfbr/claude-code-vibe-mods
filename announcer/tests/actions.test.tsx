@@ -3,7 +3,7 @@ import type { Engine, MockClock } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
 import { ACTIONS, afterRun, beforeRun, failedOutput, isCheck } from '../hooks/actions'
-import { CUES, CUE_MS, TICK_MS } from '../hooks/cues'
+import { CUES, TICK_MS } from '../hooks/cues'
 import { bandLine, bandRow, engineBand, engineHint } from './hint'
 
 // The world beneath the mod: which clips exist, tools that pass or fail, and every clip played.
@@ -325,7 +325,7 @@ describe('cues', () => {
     }
   })
 
-  test('a cue names its action and trigger in its colour, steps its frames, and is gone after its time', { options: quiet }, async ($, on) => {
+  test('a cue names its action and trigger in its colour, steps its frames, and is gone after its time', { options: { ...quiet, cue_duration: '3 sec' } }, async ($, on) => {
     world(on)
     await turn($, async $ => { await bash($, 'git push origin main') })
     const first = await bandRow($)
@@ -334,17 +334,17 @@ describe('cues', () => {
     await clock.advance(TICK_MS)
     expect(await bandLine($)).toBe(`${CUES.push.frames[1]} push  git push origin main`)
     expect(await bandLine($, true)).toBe('') // a survey holds the band
-    await clock.advance(CUE_MS)
+    await clock.advance(3000)
     expect(await bandLine($)).toBe('')
   })
 
-  test("a new cue replaces the one on screen, and the old one's timer never cuts it short", { options: quiet }, async ($, on) => {
+  test("a new cue replaces the one on screen, and the old one's timer never cuts it short", { options: { ...quiet, cue_duration: '3 sec' } }, async ($, on) => {
     world(on)
     await turn($, async $ => { await bash($, 'git push') })
     await clock.advance(1000)
     await turn($, async $ => { await bash($, 'git commit -m "long message that goes on and on past the forty-eight cells"') })
     expect(await bandLine($)).toMatch(/^.{5} commit {2}git commit -m "long message that goes on and on…$/)
-    await clock.advance(2000)
+    await clock.advance(2500)
     expect(await bandLine($)).toMatch(/ commit /)
     await clock.advance(1000)
     expect(await bandLine($)).toBe('')

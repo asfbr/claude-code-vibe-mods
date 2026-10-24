@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { CUE_MS } from '../hooks/cues'
+import { CUE_MS, TICK_MS } from '../hooks/cues'
 import { THEMES } from '../themes'
 import { engineHint, hintLine } from './hint'
 
@@ -47,7 +47,7 @@ const { setTimeout } = globalThis as unknown as { setTimeout(run: () => void, ms
 const settle = () => new Promise<void>(r => setTimeout(r, 50)) // lets an unawaited clip finish
 const quiet = { sound: false }
 // The win line under the prompt, once any action cue has run its time.
-const winShown = async ($: Engine, seen: ReturnType<typeof world>) => { await seen.clock.advance(CUE_MS); return hintLine($) }
+const winShown = async ($: Engine, seen: ReturnType<typeof world>) => { await seen.clock.advance(CUE_MS + TICK_MS); return hintLine($) }
 
 describe('tools mode', () => {
   test('an edit then a passing test run is a win, toasted with the rung', { options: { detect: 'tools', sound: false } }, async ($, on) => {

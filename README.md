@@ -17,9 +17,9 @@ which tells Claude which call to make.
 
 | | What you get |
 |---|---|
-| [**announcer**](announcer/) | Claude finishes a task and Unreal Tournament's announcer calls it: HEADSHOT for one clean fix, MULTI KILL when several parts land, WINNER on a deploy. Five voices, Quake III included. On the way, a short sound and a one-line animation for what Claude does: asks you something, opens a permission dialog, commits, pushes, fails a test, starts an `rm -rf`. You know when Claude needs you without watching the terminal. |
-| [**breathe**](breathe/) | 30 seconds of guided breathing in a pane beside the chat, with a drone that swells with each breath. Run `/breathe`, set a schedule, or let it open by itself when your prompts start running hot ("still broken??"). |
-| [**statusline**](statusline/) | One row: context fill, a countdown to when the prompt cache goes cold (and the next turn gets expensive), session cost, and your 5-hour and weekly limits with their reset times. |
+| [**announcer**](announcer/) | MO-MO-MO-MONSTER KILL KILL KILL. Claude finishes a task and Unreal Tournament's announcer calls it: HEADSHOT for one clean fix, MULTI KILL when several parts land, WINNER on a deploy. Five free options for voices, Quake III included. Separately (but in the same mod for easiness), hear sounds and a one-line animation for each key action: Claude asks you something, opens a permission dialog, commits, pushes, fails a test, starts an `rm -rf`. You know when Claude needs you without watching the terminal. This is fun but useful: don't let Claude idle! |
+| [**breathe**](breathe/) | Got ultra-angry with Claude? He knows and will make you breathe. 30 seconds of guided breathing in the terminal. Run `/breathe`, set a schedule, or let it open by itself when your prompts start running hot ("FOR F* SAKE HOW IS THIS still broken!??"). |
+| [**statusline**](statusline/) | Pre-mods from Claude, pure script. One row: context fill, a countdown to when the prompt cache goes cold (and the next turn gets expensive), session cost, and your 5-hour and weekly limits with their reset times. Ask Claude to install this. |
 
 ![The status line: Opus, my-app on main, context bar at 28% (284k of 1M), cache warm for 42 more minutes of a 1h TTL, $0.42 spent, 156 lines added and 23 removed, 5-hour limit at 24% resetting in 1h42, weekly at 41%](docs/screenshots/statusline.svg)
 

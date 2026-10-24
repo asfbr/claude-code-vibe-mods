@@ -57,7 +57,9 @@ show `announcer@...` loaded.
   `actions`; `free`, `personal` or `off` overrides it for that action alone. An action set `off` gets no cue either.
   These 17 rows show in `/config` only with `each_action` ("one row each") on; hidden, what they are set to still
   applies, and `/announcer list` shows it.
-- `cues` (default on): each action's visual cue, below. Off = sounds only.
+- `cues` (default on): each action's visual cue, below. Off = sounds only. `cue_duration`: `3 sec`, `6 sec`
+  (default), `10 sec`, `20 sec`, `30 sec`, how long it stays: longer leaves time to find which of several
+  terminals just sounded.
 - `calls` (default on): no sound, win calls included, while any app is using the microphone (a call, a meeting
   recorder, dictation), read from Windows' own microphone-use list; cues still show. Windows only.
 - `subagents` (default off): off, spawning a subagent and its end notification (`Agent "…" finished`) make no
@@ -76,7 +78,7 @@ What Claude does, not what it writes. One clip at a time: an action landing whil
 subagent's own calls make no sound. `/announcer list` shows each action's clip; `/announcer play <action>`
 plays it (to audition a pack) and waits for it, so a clip that cannot play says why in the reply.
 
-Each action also gets a cue for ~2.6 s: a five-cell animation of its own, its name and what triggered it (the
+Each action also gets a cue for `cue_duration`: a five-cell animation, its name and what triggered it (the
 command, the file, the tool), e.g. `──●── commit  git commit -m "fix the login…"`. It draws as one line in the
 band directly above the prompt (the `AbovePrompt` site; the hint row under the prompt is not drawn while a
 custom status line is set). A survey keeps the band; a new cue replaces the one on screen, even when its clip
