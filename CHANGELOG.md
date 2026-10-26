@@ -2,6 +2,11 @@
 
 The mods share one version, bumped together on each release.
 
+## 0.3.3
+
+- **announcer**: the `compacted` sound hangs on the classic `PostCompact` event: the managed
+  `cc-plugin-sec-default` skips user-tier `session.compact` hooks, so it never played.
+
 ## 0.3.2
 
 - **announcer**: `cue_duration` sets how long an action's cue stays above the prompt (3 to 30 s), and the

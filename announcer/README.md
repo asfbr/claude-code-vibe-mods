@@ -7,7 +7,8 @@ test/build/lint passed counts too. Along the way, a short sound marks what Claud
 
 The calls live in CLAUDE.md, not a mod `prompt.compose` section: since Claude Code 2.1.304 the managed
 `cc-plugin-sec-default` skips user-tier hooks there ("its prompt.compose hook was skipped"). Changing
-`theme` means rewriting that line from the voice's `calls` in `themes/index.ts`.
+`theme` means rewriting that line from the voice's `calls` in `themes/index.ts`. The same goes for
+`session.compact`, so `compacted` hangs on the classic `PostCompact` event instead.
 
 ## Setup (once per machine)
 

@@ -249,8 +249,9 @@ export const register: Register = (on, options) => {
     await sound($, pack, 'permission', `${e.tool_name} ${input.command ?? (input.file_path ? base(input.file_path) : '')}`)
     return next(e)
   })
-  on('session.compact', async ($, e, next) => {
-    if (e.agentId === undefined && e.trigger !== 'precompute') await sound($, pack, 'compacted', e.trigger)
+  // The classic event, not `session.compact`: the managed `cc-plugin-sec-default` skips user-tier hooks on that one.
+  on('classic.PostCompact', async ($, e, next) => {
+    if (e.agent_id === undefined) await sound($, pack, 'compacted', e.trigger)
     return next(e)
   })
   on('prompt.submit', async ($, e, next) => {
