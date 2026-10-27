@@ -1,6 +1,6 @@
 {
   "name": "breathe",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "A short breathing exercise beside the chat: /breathe, on a schedule, or when your prompts run hot.",
   "author": { "name": "Andre Fontoura" },
   "license": "MIT",

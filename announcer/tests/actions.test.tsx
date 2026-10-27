@@ -4,7 +4,7 @@ import type { On } from 'claude-code'
 
 import { ACTIONS, afterRun, beforeRun, failedOutput, isCheck } from '../hooks/actions'
 import { CUES, TICK_MS } from '../hooks/cues'
-import { bandLine, bandRow, engineBand, engineHint } from './hint'
+import { bandLine, bandRow, engineBand, engineHint, hintLine } from './hint'
 
 // The world beneath the mod: which clips exist, tools that pass or fail, and every clip played.
 // The free pack minus `force`, so one test can show an action with no clip. `player` answers a clip's run;
@@ -347,6 +347,58 @@ describe('cues', () => {
     await clock.advance(2500)
     expect(await bandLine($)).toMatch(/ commit /)
     await clock.advance(1000)
+    expect(await bandLine($)).toBe('')
+  })
+
+  test('linger: a win leaves its cue and call on the band after the cue time', { options: { ...quiet, cue_duration: '3 sec', linger: true, detect: 'tools' } }, async ($, on) => {
+    world(on)
+    await turn($, async $ => { await edit($); await bash($, 'npm test') })
+    await clock.advance(10_000)
+    const frames = CUES['task-done'].frames
+    expect(await bandLine($)).toBe(`${frames[frames.length - 1]} task-done  ·  FIRST BLOOD · streak 1`)
+  })
+
+  test('linger, win call sounding: the cue, its trigger, then the win', { options: { sound: true, cue_duration: '3 sec', linger: true, detect: 'tools' } }, async ($, on) => {
+    world(on)
+    await turn($, async $ => { await edit($); await bash($, 'npm test') })
+    await clock.advance(10_000)
+    const frames = CUES.edit.frames
+    expect(await bandLine($)).toBe(`${frames[frames.length - 1]} edit  a.js  ·  FIRST BLOOD · streak 1`)
+  })
+
+  test('linger: a failed check takes the win and its streak off the band', { options: { ...quiet, cue_duration: '3 sec', linger: true, detect: 'tools' } }, async ($, on) => {
+    world(on)
+    await turn($, async $ => { await edit($); await bash($, 'npm test') })
+    await turn($, async $ => { await edit($); await bash($, 'npm test FAIL') })
+    await clock.advance(10_000)
+    const frames = CUES['tests-fail'].frames
+    expect(await bandLine($)).toBe(`${frames[frames.length - 1]} tests-fail  npm test FAIL`)
+  })
+
+  test('linger with cues off: nothing on the band, the win stays on the hint row', { options: { ...quiet, cues: false, linger: true, detect: 'tools' } }, async ($, on) => {
+    world(on)
+    await turn($, async $ => { await edit($); await bash($, 'npm test') })
+    expect(await bandLine($)).toBe('')
+    expect(await hintLine($)).toBe('FIRST BLOOD · streak 1')
+  })
+
+  test('linger: the cue settles on its last frame until the next cue replaces it', { options: { ...quiet, cue_duration: '3 sec', linger: true, detect: 'tools' } }, async ($, on) => {
+    world(on)
+    await turn($, async $ => { await bash($, 'git push origin main') })
+    const last = CUES.push.frames[CUES.push.frames.length - 1]
+    await clock.advance(3000 + TICK_MS) // the cue ends on the first frame past its time
+    expect(await bandLine($)).toBe(`${last} push  git push origin main`)
+    await clock.advance(60_000)
+    expect(await bandLine($)).toBe(`${last} push  git push origin main`)
+    expect(await bandLine($, true)).toBe('') // a survey still holds the band
+    await turn($, async $ => { await bash($, 'git commit -m "x"') })
+    expect(await bandLine($)).toMatch(/ commit /)
+  })
+
+  test('linger off: the cue is gone after its time, as before', { options: { ...quiet, cue_duration: '3 sec' } }, async ($, on) => {
+    world(on)
+    await turn($, async $ => { await bash($, 'git push origin main') })
+    await clock.advance(3000 + TICK_MS)
     expect(await bandLine($)).toBe('')
   })
 

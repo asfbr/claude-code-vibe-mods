@@ -2,6 +2,11 @@
 
 The mods share one version, bumped together on each release.
 
+## 0.3.4
+
+- **announcer**: `linger` keeps an action's cue on the band above the prompt after its time is up, on its
+  last frame, with the last win call and streak beside it (off by default: the cue goes, as before).
+
 ## 0.3.3
 
 - **announcer**: the `compacted` sound hangs on the classic `PostCompact` event: the managed

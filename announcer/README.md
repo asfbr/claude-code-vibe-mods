@@ -60,7 +60,8 @@ show `announcer@...` loaded.
   applies, and `/announcer list` shows it.
 - `cues` (default on): each action's visual cue, below. Off = sounds only. `cue_duration`: `3 sec`, `6 sec`
   (default), `10 sec`, `20 sec`, `30 sec`, how long it stays: longer leaves time to find which of several
-  terminals just sounded.
+  terminals just sounded. `linger` (default off): when its time is up a cue stays on its last frame, with the
+  last win call and streak beside it, until the next cue replaces it; off, it goes.
 - `calls` (default on): no sound, win calls included, while any app is using the microphone (a call, a meeting
   recorder, dictation), read from Windows' own microphone-use list; cues still show. Windows only.
 - `subagents` (default off): off, spawning a subagent and its end notification (`Agent "…" finished`) make no

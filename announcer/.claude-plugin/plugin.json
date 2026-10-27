@@ -1,6 +1,6 @@
 {
   "name": "announcer",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "A game announcer's call when Claude finishes a task, and a sound for what it does on the way (asks, commits, pushes, fails a test).",
   "author": { "name": "Andre Fontoura" },
   "license": "MIT",
@@ -65,6 +65,12 @@
       "description": "How long a cue stays above the prompt. Longer gives you time to find which of several terminals just sounded.",
       "default": "6 sec",
       "options": ["3 sec", "6 sec", "10 sec", "20 sec", "30 sec"]
+    },
+    "linger": {
+      "type": "boolean",
+      "title": "Action sounds: cues linger",
+      "description": "On: when its time is up a cue stays above the prompt on its last frame, with the last win call and streak beside it, until the next cue replaces it. Off: it goes.",
+      "default": false
     },
     "subagents": {
       "type": "boolean",

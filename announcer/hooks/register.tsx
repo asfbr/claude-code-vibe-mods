@@ -91,6 +91,7 @@ type Pack = {
   soundedAt: Map<Action, number>
   cues: boolean
   cueMs: number // the `cue_duration` setting: how long a cue stays on screen
+  linger: boolean // the `linger` setting: a cue whose time is up settles on its last frame instead of going
   timer?: Timer // the cue on screen's frames
   shownId: number
 }
@@ -133,7 +134,7 @@ async function cue($: EngineInterface, pack: Pack, action: Action, detail: strin
       frame += 1
       const done = frame * TICK_MS >= pack.cueMs
       if (done) timer.cancel()
-      void update($, shown, c => c?.id !== id ? c : done ? null : { ...c, frame })
+      void update($, shown, c => c?.id !== id ? c : done ? (pack.linger ? { ...c, settled: true } : null) : { ...c, frame })
     })
     pack.timer = timer
   } catch {
@@ -165,12 +166,13 @@ export const register: Register = (on, options) => {
   const choice = Object.fromEntries(ACTIONS.map(a => [a, own(a) === 'default' ? fallback : own(a)])) as Record<Action, Choice>
   const cues = options.cues !== false
   const cueMs = parseInt(String(options.cue_duration), 10) * 1000 || CUE_MS // "6 sec" → 6000
+  const linger = options.linger === true
   const subagents = options.subagents === true // a subagent's spawn and its end notification sound too
   quietOnMic = options.calls !== false
   const spacing = (parseInt(String(options.spacing), 10) || 0) * 60_000 // "5 min" → 300000; "any time" → 0
   const eachAction = options.each_action === true // the per-action rows show in /config
   const pack: Pack = { fallback, choice, volume, found: new Map(), played: new Map(), heard: new Set(), spacing,
-    soundedAt: new Map(), cues, cueMs, shownId: 0 }
+    soundedAt: new Map(), cues, cueMs, linger, shownId: 0 }
   let edited = false
   let check: boolean | undefined // the last check of the turn: passed, failed, or none ran
   let lastCheck: boolean | undefined // the last check of any turn, for green after red
@@ -199,21 +201,23 @@ export const register: Register = (on, options) => {
   // Under the prompt, below the custom status line: the last win's line, dim at the hint row's end.
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     const win = await read($, winLine)
-    return win === null || e.surface !== 'terminal' ? next(e) : next({ ...e, props: { ...e.props, tail: win } })
+    return win === null || e.surface !== 'terminal' || pack.cues && pack.linger ? next(e) : next({ ...e, props: { ...e.props, tail: win } }) // lingering, the band has it
   })
 
   // The cue: one line directly above the prompt, while its sound plays. The hint row under the status line
   // is not drawn while a custom status line is set, so a cue there never showed.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const now = await read($, shown)
-    if (now === null || e.props.hasSurvey) return next(e)
-    const look = CUES[now.action as Action]
-    if (look === undefined) return next(e)
+    const win = pack.cues && pack.linger ? await read($, winLine) : null // `linger` keeps the last win beside the cue
+    const look = now === null ? undefined : CUES[now.action as Action]
+    if ((look === undefined && win === null) || e.props.hasSurvey) return next(e)
     const { Box, Text } = $.ui.resolve(e)
+    const glyph = now === null || look === undefined ? '' : look.frames[now.settled ? look.frames.length - 1 : now.frame % look.frames.length]
     return (
       <Box>
-        <Text color={look.color}>{look.frames[now.frame % look.frames.length]} {now.action}</Text>
-        <Text dimColor wrap="truncate">{now.detail === '' ? '' : `  ${now.detail}`}</Text>
+        {look !== undefined && now !== null && <Text color={look.color}>{glyph} {now.action}</Text>}
+        {now !== null && !(win !== null && now.action === 'task-done') && <Text dimColor wrap="truncate">{now.detail === '' ? '' : `  ${now.detail}`}</Text>}
+        {win !== null && <Text color="success">{look === undefined ? '' : '  ·  '}{win}</Text>}
       </Box>
     )
   })
@@ -313,7 +317,10 @@ ${result?.stderr ?? ''}`)
     const said = detect === 'tools' ? undefined : spoken(e.answer, theme)
     const earned = detect !== 'marker' && edited && check === true
     if (said === undefined && !earned) {
-      if (detect !== 'marker' && check === false) await update($, streak, () => 0) // a failed check ends the spree
+      if (detect !== 'marker' && check === false) { // a failed check ends the spree, and its line
+        await update($, streak, () => 0)
+        await update($, winLine, () => null)
+      }
       return next(e)
     }
     const n = await update($, streak, s => s + 1)
