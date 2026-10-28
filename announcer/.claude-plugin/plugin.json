@@ -1,6 +1,6 @@
 {
   "name": "announcer",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "A game announcer's call when Claude finishes a task, and a sound for what it does on the way (asks, commits, pushes, fails a test).",
   "author": { "name": "Andre Fontoura" },
   "license": "MIT",

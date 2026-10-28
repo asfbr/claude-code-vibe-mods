@@ -83,6 +83,21 @@ async function end($: EngineInterface, early: boolean) {
   await $.ui.close({ id: PANE })
 }
 
+// /breathe stop: the pane, else Edge's window, found by its own profile on the command line.
+// Clears lastOpen, so /breathe right after is not "already open".
+async function stop($: EngineInterface): Promise<string> {
+  if (current !== undefined) await end($, true)
+  else if (!windows($)) return 'nothing to stop'
+  else {
+    const r = await $.process.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command',
+      `$p = @(Get-CimInstance Win32_Process -Filter "Name = 'msedge.exe' AND CommandLine LIKE '%claude-breathe%'"); `
+      + '$p | Invoke-CimMethod -MethodName Terminate | Out-Null; $p.Count'])
+    if (!(Number(r.stdout.trim()) > 0)) return 'nothing to stop'
+  }
+  await $.store.set('lastOpen', 0)
+  return 'stopped'
+}
+
 const launch = ($: EngineInterface, argv: string[], timeoutMs: number) =>
   void $.process.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ...argv],
     { timeoutMs })
@@ -113,10 +128,12 @@ async function openPane($: EngineInterface, breath: Breath, now: number): Promis
 // the setting or the pane could not be placed. Says what happened, for /breathe.
 async function open($: EngineInterface, breath: Breath, gap: number): Promise<string> {
   const now = await $.clock.now()
-  if (current !== undefined || now - Number((await $.store.get('lastOpen')) ?? 0) < gap) return 'a breathing window is already open'
+  if (current !== undefined || now - Number((await $.store.get('lastOpen')) ?? 0) < gap) {
+    return 'a breathing window is already open; /breathe stop closes it'
+  }
   if (breath.where === 'pane' && await openPane($, breath, now)) {
     await $.store.set('lastOpen', now)
-    return 'Breathe. Esc at an empty prompt closes it.'
+    return 'Breathe. /breathe stop closes it, or Esc at an empty prompt.'
   }
   if (!windows($)) {
     return breath.where === 'pane' ? 'no room for the breathing pane here; widen the terminal or run /breathe'
@@ -127,7 +144,7 @@ async function open($: EngineInterface, breath: Breath, gap: number): Promise<st
   const url = `file:///${encodeURI(`${root}/ui/breathe.html`)}?p=${breath.pattern}&s=${breath.seconds}&v=${breath.volume}`
   // Not awaited: the launcher keeps the window pinned on top until it closes.
   launch($, [`${root}/scripts/launch.ps1`, '-Url', url], breath.seconds * 1000 + 60_000)
-  return 'Breathe. The window is in the bottom-right corner; Esc closes it.'
+  return 'Breathe. The window is in the bottom-right corner; Esc or /breathe stop closes it.'
 }
 
 export const register: Register = (on, options) => {
@@ -150,7 +167,7 @@ export const register: Register = (on, options) => {
     await $.command.register({
       name: 'breathe',
       description: 'A short breathing exercise beside the chat',
-      argumentHint: '[4-6|box|4-7-8|heat]',
+      argumentHint: '[4-6|box|4-7-8|heat|stop]',
       immediate: true,
     })
     if (every > 0) $.clock.every(every, () => void open($, breath, every - 60_000))
@@ -170,21 +187,22 @@ export const register: Register = (on, options) => {
       const now = await $.clock.now()
       const wait = cooldown - (now - Number((await $.store.get('lastHot')) ?? 0))
       const off = options.anger === 'off' ? ' Hot prompts are off.' : ''
-      return { text: `breathe: heat ${heatNow(now).toFixed(1)} of ${trigger} (sensitivity ${options.sensitivity}), `
+      return { text: `heat ${heatNow(now).toFixed(1)} of ${trigger} (sensitivity ${options.sensitivity}), `
         + `the last prompt ${last.toFixed(1)}; it halves every 10 min. Next hot break `
         + `${wait > 0 ? `in ${Math.ceil(wait / 60_000)} min at the earliest` : 'possible now'}.${off}` }
     }
-    if (asked !== '' && !names.includes(asked)) return { text: `breathe: pick ${names.join(', ')}, heat, or nothing` }
+    if (asked === 'stop') return { text: await stop($) }
+    if (asked !== '' && !names.includes(asked)) return { text: `pick ${names.join(', ')}, heat, stop, or nothing` }
     return { text: await open($, asked === '' ? breath : { ...breath, pattern: asked }, windowMs) }
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e, next) => {
     if (e.surface !== 'terminal') return next(e)
-    const { Box, Text, Raster } = $.ui.resolve(e)
+    const { Box, Button, Text, Raster } = $.ui.resolve(e)
     const run = await read($, runRef), words = await read($, wordsRef)
     if (run === null) return <Text dimColor> </Text>
     const columns = Math.max(12, e.props.bodyColumns)
-    const rows = Math.max(6, Math.min(e.props.scroll.bodyRows - 2, Math.round(columns * 0.6)))
+    const rows = Math.max(6, Math.min(e.props.scroll.bodyRows - 3, Math.round(columns * 0.6)))
     drawn = { columns, rows }
     refused = false
     const time = ((await $.clock.now()) - run.startedAt) / 1000
@@ -197,6 +215,12 @@ export const register: Register = (on, options) => {
           <Text dimColor>{words.count === '' ? '' : `  ${words.count}`}</Text>
         </Box>
         <Box justifyContent="center"><Text dimColor>{dots}</Text></Box>
+        {/* Only the fullscreen terminal reports clicks; on the main screen a button (or the frame's X) is dead. */}
+        <Box justifyContent="center">
+          {e.viewport?.isFullscreen === true
+            ? <Box><Button key="stop" label="stop" hotkey="s" onPress={() => end($, true)} /><Text dimColor>  or /breathe stop</Text></Box>
+            : <Text dimColor>/breathe stop to cancel</Text>}
+        </Box>
       </Box>
     )
   })

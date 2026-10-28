@@ -2,6 +2,13 @@
 
 The mods share one version, bumped together on each release.
 
+## 0.3.5
+
+- **breathe**: `/breathe stop` closes the pane, or the Edge window, at once, even mid-turn. The pane says so
+  under the dots, with a stop button in the fullscreen terminal. Its close mark only works there: the main
+  screen reports no clicks.
+- **announcer**, **breathe**: an icon each for the plugin listing.
+
 ## 0.3.4
 
 - **announcer**: `linger` keeps an action's cue on the band above the prompt after its time is up, on its

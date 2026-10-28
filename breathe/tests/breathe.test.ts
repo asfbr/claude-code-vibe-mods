@@ -8,7 +8,7 @@ import { heat, localInsults } from '../hooks/anger'
 // store in memory. `placed: false` is a terminal too narrow for a pane opened unasked; `insults`, the
 // text of insults.local.txt (none: the file is missing).
 const world = (on: On, { surfaces = ['terminal'], placed = true, insults = undefined as string | undefined } = {}) => {
-  const seen = { launches: [] as string[], panes: [] as string[], closes: 0, drones: [] as string[][], kills: 0,
+  const seen = { launches: [] as string[], panes: [] as string[], closes: 0, drones: [] as string[][], kills: 0, edgeKills: 0,
     status: [] as (string | undefined)[], logs: [] as string[] }
   const clock = mock.clock(on, { now: 1_000_000_000 })
   mock.store(on)
@@ -33,6 +33,7 @@ const world = (on: On, { surfaces = ['terminal'], placed = true, insults = undef
     const script = e.argv.find(a => a.endsWith('.ps1')) ?? ''
     if (script.endsWith('launch.ps1')) seen.launches.push(e.argv.at(-1) ?? '')
     else if (script.endsWith('drone.ps1')) seen.drones.push(e.argv.slice(e.argv.indexOf(script) + 1))
+    else if (e.argv.some(a => a.includes('claude-breathe'))) seen.edgeKills++
     else if (e.argv.some(a => a.includes('Terminate'))) seen.kills++
     return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
@@ -231,10 +232,10 @@ describe('sensitivity', () => {
   test('/breathe heat shows the heat, its trigger and the cooldown', { options: { sensitivity: 'low' } }, async ($, on) => {
     const { clock } = world(on)
     await start($)
-    expect((await breathe($, 'heat')).text).toBe('breathe: heat 0.0 of 8 (sensitivity low), the last prompt 0.0; it halves every 10 min. Next hot break possible now.')
+    expect((await breathe($, 'heat')).text).toBe('heat 0.0 of 8 (sensitivity low), the last prompt 0.0; it halves every 10 min. Next hot break possible now.')
     await say($, WARM)
     await clock.advance(10 * MIN)
-    expect((await breathe($, 'heat')).text).toMatch(/^breathe: heat 1\.9 of 8 \(sensitivity low\), the last prompt 3\.8;/)
+    expect((await breathe($, 'heat')).text).toMatch(/^heat 1\.9 of 8 \(sensitivity low\), the last prompt 3\.8;/)
   })
 })
 
@@ -242,10 +243,10 @@ describe('/breathe in the pane', () => {
   test('opens the pane with its drone, refuses a second, and closes itself after the breaths', async ($, on) => {
     const { seen, clock } = world(on)
     await start($)
-    expect((await breathe($)).text).toMatch(/Esc at an empty prompt/)
+    expect((await breathe($)).text).toMatch(/\/breathe stop closes it/)
     expect(seen.panes).toEqual(['breathe'])
     expect(seen.drones).toEqual([['-Pattern', '4-6', '-Cycles', '3', '-Volume', '0.35', '-StartedAt', '1000000000']])
-    expect((await breathe($, 'box')).text).toBe('a breathing window is already open')
+    expect((await breathe($, 'box')).text).toBe('a breathing window is already open; /breathe stop closes it')
     await clock.advance(34_000) // 1.6 s settling in, three 10 s breaths, the goodbye still fading
     expect(seen.closes).toBe(0)
     await clock.advance(2_000)
@@ -262,9 +263,36 @@ describe('/breathe in the pane', () => {
     await breathe($)
     const ui = await $.ui.mount(PANE)
     const sky = await ui.find({ type: 'Raster', key: 'sky' })
-    expect(sky?.props).toMatchObject({ columns: 80, rows: 16 })
+    expect(sky?.props).toMatchObject({ columns: 80, rows: 15 })
     expect((await ui.find({ type: 'Text', text: /settle in/ }))?.text).toBe('settle in')
     expect((await ui.find({ type: 'Text', text: /·/ }))?.text).toBe('· · ·')
+    // The main screen reports no clicks: the way out is spelled, not a dead button.
+    expect((await ui.find({ type: 'Text', text: /cancel/ }))?.text).toBe('/breathe stop to cancel')
+    expect(await ui.find({ type: 'Button', key: 'stop' })).toBeUndefined()
+    await ui.unmount()
+  })
+
+  test('/breathe stop closes the pane and silences the drone', async ($, on) => {
+    const { seen } = world(on)
+    await start($)
+    expect((await breathe($, 'stop')).text).toBe('nothing to stop')
+    expect(seen.edgeKills).toBe(1) // no pane: it looks for Edge's window
+    await breathe($)
+    expect((await breathe($, 'stop')).text).toBe('stopped')
+    expect(seen.closes).toBe(1)
+    expect(seen.kills).toBe(1)
+    expect(seen.edgeKills).toBe(1)
+    expect((await breathe($)).text).toMatch(/^Breathe\./) // stopped, so free to open again
+  })
+
+  test('fullscreen, the pane has a stop button', async ($, on) => {
+    const { seen } = world(on)
+    await start($)
+    await breathe($)
+    const ui = await $.ui.mount({ ...PANE, viewport: { columns: 120, rows: 40, isFullscreen: true } })
+    await ui.press({ key: 'stop' })
+    expect(seen.closes).toBe(1)
+    expect(seen.kills).toBe(1)
     await ui.unmount()
   })
 
@@ -296,7 +324,7 @@ describe('/breathe in the pane', () => {
   test('an unknown pattern is refused with the choices', async ($, on) => {
     const { opened } = world(on)
     await start($)
-    expect((await breathe($, 'fast')).text).toBe('breathe: pick 4-6, box, 4-7-8, heat, or nothing')
+    expect((await breathe($, 'fast')).text).toBe('pick 4-6, box, 4-7-8, heat, stop, or nothing')
     expect(opened()).toBe(0)
   })
 })
@@ -308,7 +336,7 @@ describe('/breathe in the window', () => {
     const first = await breathe($)
     expect(first.text).toMatch(/bottom-right/)
     expect(seen.launches[0]).toMatch(/\?p=4-6&s=30&v=0$/)
-    expect((await breathe($, 'box')).text).toBe('a breathing window is already open')
+    expect((await breathe($, 'box')).text).toBe('a breathing window is already open; /breathe stop closes it')
     await clock.advance(2 * MIN)
     await breathe($, 'box')
     expect(seen.launches[1]).toMatch(/\?p=box&/)

@@ -4,8 +4,9 @@ Claude Code mod: a short breathing exercise in a pane beside the chat. A soft co
 drifting contour lines grows as you breathe in and shrinks as you breathe out; one line lights up as the phase's
 timer, and dust gathers in on the breath and scatters out. Each phase has its colours (icy in, violet held full,
 amber to rose out, indigo held empty), and a low organ drone with a long reverb swells with the breath. It closes
-itself after 30 s by default; Esc at an empty prompt, or the pane's close mark, closes it sooner. Zero tokens:
-nothing it does reaches the model.
+itself after 30 s by default; `/breathe stop` closes it sooner, the pane or the window, even mid-turn. So do Esc
+at an empty, idle prompt and, in the fullscreen terminal, the pane's stop button or close mark (the main screen
+reports no clicks, so there they do nothing). Zero tokens: nothing it does reaches the model.
 
 ![The pane mid-breath: a blue glow ringed by drifting contour lines and dust, "breathe in 2" under it](../docs/screenshots/breathe-in.png)
 
